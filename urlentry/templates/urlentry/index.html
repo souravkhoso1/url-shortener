@@ -1,0 +1,14 @@
+{% if url_entry_list %}
+    <ul>
+    {% for url_entry in url_entry_list %}
+        <li>
+            <ul>
+                <li>Code: {{ url_entry.short_url_code }}</li>
+                <li>URL: <a href="{{ url_entry.original_url }}" target="_blank">{{ url_entry.original_url }}</a></li>
+            </ul>
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>Our Database does not have any entry at this moment.</p>
+{% endif %}
