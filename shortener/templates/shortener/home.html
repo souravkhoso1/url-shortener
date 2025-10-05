@@ -25,15 +25,52 @@
             margin: 20px 0;
             border: 2px solid #667eea;
         }
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            margin-bottom: 30px;
+            padding: 15px 20px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="navbar-custom">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">🔗 URL Shortener</h4>
+                <div>
+                    {% if user.is_authenticated %}
+                        <span class="me-3">Hello, <strong>{{ user.username }}</strong></span>
+                        <a href="{% url 'shortener:my_urls' %}" class="btn btn-sm btn-outline-primary me-2">My URLs</a>
+                        <a href="{% url 'shortener:logout' %}" class="btn btn-sm btn-outline-danger">Logout</a>
+                    {% else %}
+                        <a href="{% url 'shortener:login' %}" class="btn btn-sm btn-outline-primary me-2">Login</a>
+                        <a href="{% url 'shortener:register' %}" class="btn btn-sm btn-primary">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="main-container">
-                    <h1 class="text-center mb-4">🔗 URL Shortener</h1>
-                    <p class="text-center text-muted mb-4">Shorten your long URLs instantly</p>
+                    <h1 class="text-center mb-4">Shorten Your URLs</h1>
+                    <p class="text-center text-muted mb-4">
+                        {% if user.is_authenticated %}
+                            Create and manage your shortened URLs
+                        {% else %}
+                            Shorten your long URLs instantly. <a href="{% url 'shortener:register' %}">Register</a> to track your URLs!
+                        {% endif %}
+                    </p>
 
                     <form method="post">
                         {% csrf_token %}
@@ -58,7 +95,13 @@
 
                     {% if recent_urls %}
                     <div class="mt-4">
-                        <h5>Recent URLs:</h5>
+                        <h5>
+                            {% if user.is_authenticated %}
+                                Your Recent URLs:
+                            {% else %}
+                                Recent URLs:
+                            {% endif %}
+                        </h5>
                         <ul class="list-group">
                             {% for url in recent_urls %}
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -71,6 +114,11 @@
                             </li>
                             {% endfor %}
                         </ul>
+                        {% if user.is_authenticated %}
+                        <div class="text-center mt-3">
+                            <a href="{% url 'shortener:my_urls' %}" class="btn btn-sm btn-outline-primary">View All My URLs</a>
+                        </div>
+                        {% endif %}
                     </div>
                     {% endif %}
                 </div>
@@ -78,6 +126,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function copyToClipboard() {
             const input = document.getElementById('shortUrl');
