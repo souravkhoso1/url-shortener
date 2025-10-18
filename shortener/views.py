@@ -8,6 +8,9 @@ from .forms import URLForm, UserRegisterForm, UserLoginForm
 
 
 def home(request):
+    # Get total count of all shortened URLs
+    total_urls = ShortenedURL.objects.count()
+
     if request.method == 'POST':
         form = URLForm(request.POST)
         if form.is_valid():
@@ -34,30 +37,18 @@ def home(request):
 
             short_url = request.build_absolute_uri(f'/{shortened.short_code}')
 
-            # Get recent URLs based on authentication
-            if request.user.is_authenticated:
-                recent_urls = ShortenedURL.objects.filter(user=request.user)[:10]
-            else:
-                recent_urls = ShortenedURL.objects.filter(user__isnull=True)[:10]
-
             return render(request, 'shortener/home.html', {
                 'form': URLForm(),
                 'short_url': short_url,
                 'shortened': shortened,
-                'recent_urls': recent_urls
+                'total_urls': total_urls
             })
     else:
         form = URLForm()
 
-    # Show user's URLs if authenticated, otherwise show anonymous URLs
-    if request.user.is_authenticated:
-        recent_urls = ShortenedURL.objects.filter(user=request.user)[:10]
-    else:
-        recent_urls = ShortenedURL.objects.filter(user__isnull=True)[:10]
-
     return render(request, 'shortener/home.html', {
         'form': form,
-        'recent_urls': recent_urls
+        'total_urls': total_urls
     })
 
 
