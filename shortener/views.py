@@ -12,18 +12,20 @@ def home(request):
     total_urls = ShortenedURL.objects.count()
 
     if request.method == 'POST':
+        # Only allow logged-in users to shorten URLs
+        if not request.user.is_authenticated:
+            messages.error(request, 'Please login or register to shorten URLs.')
+            return redirect('shortener:login')
+
         form = URLForm(request.POST)
         if form.is_valid():
             original_url = form.cleaned_data['url']
 
             # Check if URL already exists for this user
-            if request.user.is_authenticated:
-                existing = ShortenedURL.objects.filter(
-                    original_url=original_url,
-                    user=request.user
-                ).first()
-            else:
-                existing = None
+            existing = ShortenedURL.objects.filter(
+                original_url=original_url,
+                user=request.user
+            ).first()
 
             if existing:
                 shortened = existing
@@ -32,7 +34,7 @@ def home(request):
                 shortened = ShortenedURL.objects.create(
                     original_url=original_url,
                     short_code=short_code,
-                    user=request.user if request.user.is_authenticated else None
+                    user=request.user
                 )
 
             short_url = request.build_absolute_uri(f'/{shortened.short_code}')
