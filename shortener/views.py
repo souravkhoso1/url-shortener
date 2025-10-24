@@ -2,9 +2,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.models import User
 from django.contrib import messages
-from .models import ShortenedURL
-from .forms import URLForm, UserRegisterForm, UserLoginForm
+from .models import ShortenedURL, PasswordResetToken
+from .forms import URLForm, UserRegisterForm, UserLoginForm, PasswordResetRequestForm, PasswordResetConfirmForm
+from .email_utils import send_password_reset_email
 
 
 def home(request):
@@ -131,3 +133,83 @@ def user_logout(request):
     logout(request)
     messages.info(request, 'You have been logged out.')
     return redirect('shortener:home')
+
+
+def password_reset_request(request):
+    """Handle password reset request - user enters username"""
+    if request.user.is_authenticated:
+        return redirect('shortener:home')
+
+    if request.method == 'POST':
+        form = PasswordResetRequestForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            user = User.objects.get(username=username)
+
+            # Create password reset token
+            reset_token = PasswordResetToken.create_for_user(user, expiry_hours=24)
+
+            # Build reset link
+            reset_link = request.build_absolute_uri(
+                f'/password-reset/confirm/{reset_token.token}/'
+            )
+
+            # Send email using MailerSend
+            email_sent = send_password_reset_email(
+                user_email=user.email,
+                username=user.username,
+                reset_link=reset_link
+            )
+
+            if email_sent:
+                messages.success(
+                    request,
+                    f'Password reset link has been sent to the email address associated with {username}.'
+                )
+            else:
+                messages.warning(
+                    request,
+                    'There was an issue sending the email. Please contact support or try again later.'
+                )
+
+            return redirect('shortener:login')
+    else:
+        form = PasswordResetRequestForm()
+
+    return render(request, 'shortener/password_reset_request.html', {'form': form})
+
+
+def password_reset_confirm(request, token):
+    """Handle password reset confirmation - user enters new password"""
+    # Get the reset token
+    reset_token = get_object_or_404(PasswordResetToken, token=token)
+
+    # Check if token is valid
+    if not reset_token.is_valid():
+        messages.error(request, 'This password reset link is invalid or has expired.')
+        return redirect('shortener:password_reset_request')
+
+    if request.method == 'POST':
+        form = PasswordResetConfirmForm(request.POST)
+        if form.is_valid():
+            # Set new password
+            new_password = form.cleaned_data['password1']
+            user = reset_token.user
+            user.set_password(new_password)
+            user.save()
+
+            # Mark token as used
+            reset_token.mark_as_used()
+
+            messages.success(
+                request,
+                'Your password has been reset successfully. You can now log in with your new password.'
+            )
+            return redirect('shortener:login')
+    else:
+        form = PasswordResetConfirmForm()
+
+    return render(request, 'shortener/password_reset_confirm.html', {
+        'form': form,
+        'token': token
+    })

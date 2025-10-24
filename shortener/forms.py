@@ -67,3 +67,52 @@ class UserRegisterForm(UserCreationForm):
 class UserLoginForm(AuthenticationForm):
     username = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}))
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+
+
+class PasswordResetRequestForm(forms.Form):
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your username',
+            'required': True
+        })
+    )
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if not User.objects.filter(username=username).exists():
+            raise forms.ValidationError('No user found with this username.')
+        return username
+
+
+class PasswordResetConfirmForm(forms.Form):
+    password1 = forms.CharField(
+        label='New Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter new password',
+            'required': True
+        })
+    )
+    password2 = forms.CharField(
+        label='Confirm New Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Re-enter new password',
+            'required': True
+        })
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get('password1')
+        password2 = cleaned_data.get('password2')
+
+        if password1 and password2:
+            if password1 != password2:
+                raise forms.ValidationError('Passwords do not match.')
+            if len(password1) < 8:
+                raise forms.ValidationError('Password must be at least 8 characters long.')
+
+        return cleaned_data
