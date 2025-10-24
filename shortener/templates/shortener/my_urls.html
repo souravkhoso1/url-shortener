@@ -31,13 +31,32 @@
         .url-card:hover {
             transform: translateX(5px);
         }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
     </style>
 </head>
 <body>
+    <!-- Toast Container -->
+    <div class="toast-container">
+        <div id="copyToast" class="toast bg-light" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-success text-white">
+                <strong class="me-auto">Success</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                URL copied to clipboard!
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="navbar-custom">
             <div class="d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">🔗 URL Shortener</h4>
+                <h4 class="mb-0"><a href="{% url 'shortener:home' %}" class="text-decoration-none text-dark">🔗 URL Shortener</a></h4>
                 <div>
                     <span class="me-3">Hello, <strong>{{ user.username }}</strong></span>
                     <a href="{% url 'shortener:home' %}" class="btn btn-sm btn-outline-primary me-2">Home</a>
@@ -102,7 +121,13 @@
     <script>
         function copyUrl(url) {
             navigator.clipboard.writeText(url).then(() => {
-                alert('URL copied to clipboard!');
+                // Show toast notification
+                const toastElement = document.getElementById('copyToast');
+                const toast = new bootstrap.Toast(toastElement, {
+                    autohide: true,
+                    delay: 5000
+                });
+                toast.show();
             });
         }
     </script>
