@@ -20,22 +20,32 @@ def home(request):
         form = URLForm(request.POST)
         if form.is_valid():
             original_url = form.cleaned_data['url']
+            custom_code = form.cleaned_data.get('custom_code')
 
-            # Check if URL already exists for this user
-            existing = ShortenedURL.objects.filter(
-                original_url=original_url,
-                user=request.user
-            ).first()
-
-            if existing:
-                shortened = existing
-            else:
-                short_code = ShortenedURL.generate_short_code()
+            # If custom code provided, use it regardless of existing URLs
+            if custom_code:
+                short_code = custom_code
                 shortened = ShortenedURL.objects.create(
                     original_url=original_url,
                     short_code=short_code,
                     user=request.user
                 )
+            else:
+                # Check if URL already exists for this user
+                existing = ShortenedURL.objects.filter(
+                    original_url=original_url,
+                    user=request.user
+                ).first()
+
+                if existing:
+                    shortened = existing
+                else:
+                    short_code = ShortenedURL.generate_short_code()
+                    shortened = ShortenedURL.objects.create(
+                        original_url=original_url,
+                        short_code=short_code,
+                        user=request.user
+                    )
 
             short_url = request.build_absolute_uri(f'/{shortened.short_code}')
 
