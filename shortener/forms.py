@@ -2,7 +2,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import ShortenedURL
+from .models import ShortenedURL, UserProfile
 import re
 
 
@@ -116,3 +116,28 @@ class PasswordResetConfirmForm(forms.Form):
                 raise forms.ValidationError('Password must be at least 8 characters long.')
 
         return cleaned_data
+
+
+class UserUpdateForm(forms.ModelForm):
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={'class': 'form-control'})
+    )
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'username', 'email']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'username': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
+        }
+
+
+class ProfilePhotoUpdateForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ['photo']
+        widgets = {
+            'photo': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'})
+        }

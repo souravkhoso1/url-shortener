@@ -2,6 +2,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from datetime import timedelta
 import string
 import random
@@ -63,3 +65,33 @@ class PasswordResetToken(models.Model):
         token = cls.generate_token()
         expires_at = timezone.now() + timedelta(hours=expiry_hours)
         return cls.objects.create(user=user, token=token, expires_at=expires_at)
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    photo = models.ImageField(upload_to='profile_photos/', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Profile of {self.user.username}"
+
+    def get_photo_url(self):
+        """Return photo URL or None"""
+        if self.photo:
+            return self.photo.url
+        return None
+
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Automatically create a profile when a user is created"""
+    if created:
+        UserProfile.objects.create(user=instance)
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """Save the profile when the user is saved"""
+    if hasattr(instance, 'profile'):
+        instance.profile.save()

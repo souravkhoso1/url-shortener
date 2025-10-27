@@ -61,6 +61,7 @@
                     {% if user.is_authenticated %}
                         <span class="me-3">Hello, <strong>{{ user.username }}</strong></span>
                         <a href="{% url 'shortener:my_urls' %}" class="btn btn-sm btn-outline-primary me-2">My URLs</a>
+                        <a href="{% url 'shortener:profile' %}" class="btn btn-sm btn-outline-secondary me-2">Profile</a>
                         <a href="{% url 'shortener:logout' %}" class="btn btn-sm btn-outline-danger">Logout</a>
                     {% else %}
                         <a href="{% url 'shortener:login' %}" class="btn btn-sm btn-outline-primary me-2">Login</a>

@@ -1,0 +1,159 @@
+<!-- shortener/templates/shortener/edit_profile.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile - URL Shortener</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 50px 0;
+        }
+        .main-container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            margin-bottom: 30px;
+            padding: 15px 20px;
+        }
+        .profile-photo-preview {
+            width: 150px;
+            height: 150px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 4px solid #667eea;
+        }
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="navbar-custom">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><a href="{% url 'shortener:home' %}" class="text-decoration-none text-dark">🔗 URL Shortener</a></h4>
+                <div>
+                    <span class="me-3">Hello, <strong>{{ user.username }}</strong></span>
+                    <a href="{% url 'shortener:my_urls' %}" class="btn btn-sm btn-outline-primary me-2">My URLs</a>
+                    <a href="{% url 'shortener:profile' %}" class="btn btn-sm btn-outline-secondary me-2">View Profile</a>
+                    <a href="{% url 'shortener:logout' %}" class="btn btn-sm btn-outline-danger">Logout</a>
+                </div>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="main-container">
+                    <h2 class="mb-4">Edit Profile</h2>
+
+                    <!-- Current Profile Photo -->
+                    <div class="text-center mb-4">
+                        <h5 class="mb-3">Current Profile Photo</h5>
+                        {% if profile.photo %}
+                            <img src="{{ profile.photo.url }}" alt="{{ user.username }}" class="profile-photo-preview mb-3">
+                        {% else %}
+                            <img src="{{ gravatar_url }}" alt="{{ user.username }}" class="profile-photo-preview mb-3">
+                            <p class="text-muted">Using Identicon (default)</p>
+                        {% endif %}
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <!-- User Information Section -->
+                        <div class="form-section">
+                            <h4 class="mb-3">Personal Information</h4>
+
+                            <div class="mb-3">
+                                <label for="{{ user_form.first_name.id_for_label }}" class="form-label">First Name</label>
+                                {{ user_form.first_name }}
+                                {% if user_form.first_name.errors %}
+                                    <div class="text-danger">{{ user_form.first_name.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ user_form.last_name.id_for_label }}" class="form-label">Last Name</label>
+                                {{ user_form.last_name }}
+                                {% if user_form.last_name.errors %}
+                                    <div class="text-danger">{{ user_form.last_name.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ user_form.username.id_for_label }}" class="form-label">Username</label>
+                                {{ user_form.username }}
+                                <small class="form-text text-muted">Username cannot be changed</small>
+                                {% if user_form.username.errors %}
+                                    <div class="text-danger">{{ user_form.username.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ user_form.email.id_for_label }}" class="form-label">Email</label>
+                                {{ user_form.email }}
+                                {% if user_form.email.errors %}
+                                    <div class="text-danger">{{ user_form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Profile Photo Section -->
+                        <div class="form-section">
+                            <h4 class="mb-3">Profile Photo</h4>
+
+                            <div class="mb-3">
+                                <label for="{{ photo_form.photo.id_for_label }}" class="form-label">Upload New Photo</label>
+                                {{ photo_form.photo }}
+                                <small class="form-text text-muted">Upload a new profile photo. Supported formats: JPG, PNG, GIF. Max size: 5MB.</small>
+                                {% if photo_form.photo.errors %}
+                                    <div class="text-danger">{{ photo_form.photo.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            {% if profile.photo %}
+                            <div class="alert alert-info">
+                                <strong>Note:</strong> If you don't upload a new photo, your current photo will remain unchanged. To revert to Identicon, you'll need to remove the photo manually.
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">
+                                <strong>Note:</strong> Currently using Identicon as your profile photo. Upload a custom photo to replace it.
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'shortener:profile' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

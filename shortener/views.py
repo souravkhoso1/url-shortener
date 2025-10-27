@@ -4,9 +4,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
-from .models import ShortenedURL, PasswordResetToken
-from .forms import URLForm, UserRegisterForm, UserLoginForm, PasswordResetRequestForm, PasswordResetConfirmForm
+from django.http import HttpResponse
+from .models import ShortenedURL, PasswordResetToken, UserProfile
+from .forms import URLForm, UserRegisterForm, UserLoginForm, PasswordResetRequestForm, PasswordResetConfirmForm, UserUpdateForm, ProfilePhotoUpdateForm
 from .email_utils import send_password_reset_email
+from .utils import get_identicon_url
+from .identicon_utils import generate_identicon_response
 
 
 def home(request):
@@ -213,3 +216,65 @@ def password_reset_confirm(request, token):
         'form': form,
         'token': token
     })
+
+
+@login_required
+def profile(request):
+    """Display user profile"""
+    # Ensure user has a profile (should be created automatically, but just in case)
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+    # Get Identicon URL
+    gravatar_url = get_identicon_url(request.user.username)
+
+    # Get user's stats
+    total_urls = ShortenedURL.objects.filter(user=request.user).count()
+    total_clicks = sum(url.clicks for url in ShortenedURL.objects.filter(user=request.user))
+
+    context = {
+        'profile': profile,
+        'gravatar_url': gravatar_url,
+        'total_urls': total_urls,
+        'total_clicks': total_clicks,
+    }
+
+    return render(request, 'shortener/profile.html', context)
+
+
+@login_required
+def edit_profile(request):
+    """Edit user profile information and photo"""
+    # Ensure user has a profile
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        user_form = UserUpdateForm(request.POST, instance=request.user)
+        photo_form = ProfilePhotoUpdateForm(request.POST, request.FILES, instance=profile)
+
+        if user_form.is_valid() and photo_form.is_valid():
+            user_form.save()
+            photo_form.save()
+            messages.success(request, 'Your profile has been updated successfully!')
+            return redirect('shortener:profile')
+    else:
+        user_form = UserUpdateForm(instance=request.user)
+        photo_form = ProfilePhotoUpdateForm(instance=request.user.profile)
+
+    gravatar_url = get_identicon_url(request.user.username)
+
+    context = {
+        'user_form': user_form,
+        'photo_form': photo_form,
+        'gravatar_url': gravatar_url,
+        'profile': profile,
+    }
+
+    return render(request, 'shortener/edit_profile.html', context)
+
+
+def serve_identicon(request, username):
+    """
+    Generate and serve an identicon image for a given username.
+    """
+    image_buffer = generate_identicon_response(username)
+    return HttpResponse(image_buffer.getvalue(), content_type='image/png')
