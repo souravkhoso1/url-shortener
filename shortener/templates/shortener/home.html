@@ -1,183 +1,115 @@
-<!-- shortener/templates/shortener/home.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>URL Shortener</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 50px 0;
-        }
-        .main-container {
-            background: white;
-            border-radius: 15px;
-            padding: 40px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        .short-url-box {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            border: 2px solid #667eea;
-        }
-        .navbar-custom {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 10px;
-            margin-bottom: 30px;
-            padding: 15px 20px;
-        }
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1050;
-        }
-    </style>
-</head>
-<body>
-    <!-- Toast Container -->
-    <div class="toast-container">
-        <div id="copyToast" class="toast bg-light" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header bg-success text-white">
-                <strong class="me-auto">Success</strong>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body">
-                URL copied to clipboard!
-            </div>
-        </div>
-    </div>
+{% extends "shortener/base.html" %}
 
-    <div class="container">
-        <div class="navbar-custom">
-            <div class="d-flex justify-content-between align-items-center">
-                <h4 class="mb-0"><a href="{% url 'shortener:home' %}" class="text-decoration-none text-dark">🔗 URL Shortener</a></h4>
-                <div>
-                    {% if user.is_authenticated %}
-                        <span class="me-3">Hello, <strong>{{ user.username }}</strong></span>
-                        <a href="{% url 'shortener:my_urls' %}" class="btn btn-sm btn-outline-primary me-2">My URLs</a>
-                        <a href="{% url 'shortener:profile' %}" class="btn btn-sm btn-outline-secondary me-2">Profile</a>
-                        <a href="{% url 'shortener:logout' %}" class="btn btn-sm btn-outline-danger">Logout</a>
-                    {% else %}
-                        <a href="{% url 'shortener:login' %}" class="btn btn-sm btn-outline-primary me-2">Login</a>
-                        <a href="{% url 'shortener:register' %}" class="btn btn-sm btn-primary">Register</a>
+{% block title %}Home - URL Shortener{% endblock %}
+
+{% block extra_css %}
+.short-url-box {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px 0;
+    border: 2px solid #667eea;
+}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="main-container">
+            <h1 class="text-center mb-4">Shorten Your URLs</h1>
+            <p class="text-center text-muted mb-4">
+                {% if user.is_authenticated %}
+                    Create and manage your shortened URLs
+                {% else %}
+                    Fast, secure URL shortening service
+                {% endif %}
+            </p>
+
+            {% if user.is_authenticated %}
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="{{ form.url.id_for_label }}" class="form-label">{{ form.url.label }}</label>
+                    {{ form.url }}
+                    {% if form.url.errors %}
+                        <div class="text-danger mt-1">{{ form.url.errors }}</div>
                     {% endif %}
                 </div>
+                <div class="mb-3">
+                    <label for="{{ form.custom_code.id_for_label }}" class="form-label">{{ form.custom_code.label }}</label>
+                    {{ form.custom_code }}
+                    {% if form.custom_code.errors %}
+                        <div class="text-danger mt-1">{{ form.custom_code.errors }}</div>
+                    {% endif %}
+                    <small class="form-text text-muted">Leave blank to auto-generate a short code. Min 3 characters, letters, numbers, and hyphens only.</small>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Shorten URL</button>
+            </form>
+            {% else %}
+            <!-- Login Required Message -->
+            <div class="alert alert-warning text-center" style="background: rgba(255, 193, 7, 0.1); border: 2px solid rgba(255, 193, 7, 0.4);">
+                <h5 class="mb-3">🔒 Authentication Required</h5>
+                <p class="mb-3">To shorten URLs, please login or register for a free account.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <a href="{% url 'shortener:login' %}" class="btn btn-primary">Login</a>
+                    <a href="{% url 'shortener:register' %}" class="btn btn-outline-primary">Register</a>
+                </div>
             </div>
-        </div>
 
-        {% if messages %}
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <!-- Disabled form for visual reference -->
+            <form>
+                <div class="mb-3">
+                    <input type="url" class="form-control" placeholder="https://example.com/very-long-url" disabled>
+                </div>
+                <button type="button" class="btn btn-secondary w-100" disabled>Shorten URL</button>
+            </form>
+            {% endif %}
+
+            {% if short_url %}
+            <div class="short-url-box">
+                <h5>Your shortened URL:</h5>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" value="{{ short_url }}" id="shortUrl" readonly>
+                    <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">Copy</button>
+                </div>
+                <p class="mb-0">
+                    <a href="{% url 'shortener:stats' shortened.short_code %}" class="text-decoration-none">View stats</a>
+                </p>
             </div>
-            {% endfor %}
-        {% endif %}
+            {% endif %}
 
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="main-container">
-                    <h1 class="text-center mb-4">Shorten Your URLs</h1>
-                    <p class="text-center text-muted mb-4">
-                        {% if user.is_authenticated %}
-                            Create and manage your shortened URLs
-                        {% else %}
-                            Fast, secure URL shortening service
-                        {% endif %}
+            <div class="mt-4 text-center">
+                <div class="alert alert-info" style="background: rgba(102, 126, 234, 0.1); border: 2px solid rgba(102, 126, 234, 0.3); color: #333;">
+                    <h5 class="mb-2">📊 Platform Statistics</h5>
+                    <p class="mb-0 fs-5">
+                        <strong>Shortened {{ total_urls }} URL{{ total_urls|pluralize }} since 2025</strong>
                     </p>
-
-                    {% if user.is_authenticated %}
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="{{ form.url.id_for_label }}" class="form-label">{{ form.url.label }}</label>
-                            {{ form.url }}
-                            {% if form.url.errors %}
-                                <div class="text-danger mt-1">{{ form.url.errors }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="mb-3">
-                            <label for="{{ form.custom_code.id_for_label }}" class="form-label">{{ form.custom_code.label }}</label>
-                            {{ form.custom_code }}
-                            {% if form.custom_code.errors %}
-                                <div class="text-danger mt-1">{{ form.custom_code.errors }}</div>
-                            {% endif %}
-                            <small class="form-text text-muted">Leave blank to auto-generate a short code. Min 3 characters, letters, numbers, and hyphens only.</small>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">Shorten URL</button>
-                    </form>
-                    {% else %}
-                    <!-- Login Required Message -->
-                    <div class="alert alert-warning text-center" style="background: rgba(255, 193, 7, 0.1); border: 2px solid rgba(255, 193, 7, 0.4);">
-                        <h5 class="mb-3">🔒 Authentication Required</h5>
-                        <p class="mb-3">To shorten URLs, please login or register for a free account.</p>
-                        <div class="d-flex gap-2 justify-content-center">
-                            <a href="{% url 'shortener:login' %}" class="btn btn-primary">Login</a>
-                            <a href="{% url 'shortener:register' %}" class="btn btn-outline-primary">Register</a>
-                        </div>
-                    </div>
-
-                    <!-- Disabled form for visual reference -->
-                    <form>
-                        <div class="mb-3">
-                            <input type="url" class="form-control" placeholder="https://example.com/very-long-url" disabled>
-                        </div>
-                        <button type="button" class="btn btn-secondary w-100" disabled>Shorten URL</button>
-                    </form>
-                    {% endif %}
-
-                    {% if short_url %}
-                    <div class="short-url-box">
-                        <h5>Your shortened URL:</h5>
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control" value="{{ short_url }}" id="shortUrl" readonly>
-                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">Copy</button>
-                        </div>
-                        <p class="mb-0">
-                            <a href="{% url 'shortener:stats' shortened.short_code %}" class="text-decoration-none">View stats</a>
-                        </p>
-                    </div>
-                    {% endif %}
-
-                    <div class="mt-4 text-center">
-                        <div class="alert alert-info" style="background: rgba(102, 126, 234, 0.1); border: 2px solid rgba(102, 126, 234, 0.3); color: #333;">
-                            <h5 class="mb-2">📊 Platform Statistics</h5>
-                            <p class="mb-0 fs-5">
-                                <strong>Shortened {{ total_urls }} URL{{ total_urls|pluralize }} since 2025</strong>
-                            </p>
-                        </div>
-                        {% if user.is_authenticated %}
-                        <div class="mt-3">
-                            <a href="{% url 'shortener:my_urls' %}" class="btn btn-primary">View My URLs</a>
-                        </div>
-                        {% endif %}
-                    </div>
                 </div>
+                {% if user.is_authenticated %}
+                <div class="mt-3">
+                    <a href="{% url 'shortener:my_urls' %}" class="btn btn-primary">View My URLs</a>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function copyToClipboard() {
-            const input = document.getElementById('shortUrl');
-            input.select();
-            document.execCommand('copy');
+{% block extra_js %}
+<script>
+    function copyToClipboard() {
+        const input = document.getElementById('shortUrl');
+        input.select();
+        document.execCommand('copy');
 
-            // Show toast notification
-            const toastElement = document.getElementById('copyToast');
-            const toast = new bootstrap.Toast(toastElement, {
-                autohide: true,
-                delay: 5000
-            });
-            toast.show();
-        }
-    </script>
-</body>
-</html>
+        // Show toast notification
+        const toastElement = document.getElementById('copyToast');
+        const toast = new bootstrap.Toast(toastElement, {
+            autohide: true,
+            delay: 5000
+        });
+        toast.show();
+    }
+</script>
+{% endblock %}

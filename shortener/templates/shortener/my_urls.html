@@ -1,136 +1,82 @@
-<!-- shortener/templates/shortener/my_urls.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My URLs - URL Shortener</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 50px 0;
-        }
-        .main-container {
-            background: white;
-            border-radius: 15px;
-            padding: 40px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        .navbar-custom {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 10px;
-            margin-bottom: 30px;
-            padding: 15px 20px;
-        }
-        .url-card {
-            border-left: 4px solid #667eea;
-            transition: transform 0.2s;
-        }
-        .url-card:hover {
-            transform: translateX(5px);
-        }
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1050;
-        }
-    </style>
-</head>
-<body>
-    <!-- Toast Container -->
-    <div class="toast-container">
-        <div id="copyToast" class="toast bg-light" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header bg-success text-white">
-                <strong class="me-auto">Success</strong>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body">
-                URL copied to clipboard!
-            </div>
-        </div>
-    </div>
+{% extends "shortener/base.html" %}
 
-    <div class="container">
-        <div class="navbar-custom">
-            <div class="d-flex justify-content-between align-items-center">
-                <h4 class="mb-0"><a href="{% url 'shortener:home' %}" class="text-decoration-none text-dark">🔗 URL Shortener</a></h4>
-                <div>
-                    <span class="me-3">Hello, <strong>{{ user.username }}</strong></span>
-                    <a href="{% url 'shortener:home' %}" class="btn btn-sm btn-outline-primary me-2">Home</a>
-                    <a href="{% url 'shortener:profile' %}" class="btn btn-sm btn-outline-secondary me-2">Profile</a>
-                    <a href="{% url 'shortener:logout' %}" class="btn btn-sm btn-outline-danger">Logout</a>
-                </div>
-            </div>
-        </div>
+{% block title %}My URLs - URL Shortener{% endblock %}
 
-        <div class="row justify-content-center">
-            <div class="col-md-10">
-                <div class="main-container">
-                    <h2 class="mb-4">My Shortened URLs</h2>
+{% block extra_css %}
+.url-card {
+    border-left: 4px solid #667eea;
+    transition: transform 0.2s;
+}
+.url-card:hover {
+    transform: translateX(5px);
+}
+{% endblock %}
 
-                    {% if urls %}
-                        <p class="text-muted">Total URLs: {{ urls|length }}</p>
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="main-container">
+            <h2 class="mb-4">My Shortened URLs</h2>
 
-                        <div class="row">
-                            {% for url in urls %}
-                            <div class="col-md-12 mb-3">
-                                <div class="card url-card">
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-8">
-                                                <h5 class="card-title mb-2">
-                                                    <code>{{ request.scheme }}://{{ request.get_host }}/{{ url.short_code }}</code>
-                                                </h5>
-                                                <p class="card-text text-muted mb-2">
-                                                    <strong>Original:</strong>
-                                                    <a href="{{ url.original_url }}" target="_blank" class="text-decoration-none">
-                                                        {{ url.original_url|truncatechars:80 }}
-                                                    </a>
-                                                </p>
-                                                <small class="text-muted">
-                                                    Created: {{ url.created_at|date:"M d, Y H:i" }}
-                                                </small>
-                                            </div>
-                                            <div class="col-md-4 text-end">
-                                                <div class="mb-2">
-                                                    <span class="badge bg-primary fs-5">{{ url.clicks }} clicks</span>
-                                                </div>
-                                                <a href="{% url 'shortener:stats' url.short_code %}" class="btn btn-sm btn-outline-info me-2">Stats</a>
-                                                <button class="btn btn-sm btn-outline-secondary" onclick="copyUrl('{{ request.scheme }}://{{ request.get_host }}/{{ url.short_code }}')">Copy</button>
-                                            </div>
+            {% if urls %}
+                <p class="text-muted">Total URLs: {{ urls|length }}</p>
+
+                <div class="row">
+                    {% for url in urls %}
+                    <div class="col-md-12 mb-3">
+                        <div class="card url-card">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h5 class="card-title mb-2">
+                                            <code>{{ request.scheme }}://{{ request.get_host }}/{{ url.short_code }}</code>
+                                        </h5>
+                                        <p class="card-text text-muted mb-2">
+                                            <strong>Original:</strong>
+                                            <a href="{{ url.original_url }}" target="_blank" class="text-decoration-none">
+                                                {{ url.original_url|truncatechars:80 }}
+                                            </a>
+                                        </p>
+                                        <small class="text-muted">
+                                            Created: {{ url.created_at|date:"M d, Y H:i" }}
+                                        </small>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <div class="mb-2">
+                                            <span class="badge bg-primary fs-5">{{ url.clicks }} clicks</span>
                                         </div>
+                                        <a href="{% url 'shortener:stats' url.short_code %}" class="btn btn-sm btn-outline-info me-2">Stats</a>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="copyUrl('{{ request.scheme }}://{{ request.get_host }}/{{ url.short_code }}')">Copy</button>
                                     </div>
                                 </div>
                             </div>
-                            {% endfor %}
                         </div>
-                    {% else %}
-                        <div class="text-center py-5">
-                            <p class="text-muted fs-5">You haven't created any shortened URLs yet.</p>
-                            <a href="{% url 'shortener:home' %}" class="btn btn-primary">Create Your First URL</a>
-                        </div>
-                    {% endif %}
+                    </div>
+                    {% endfor %}
                 </div>
-            </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <p class="text-muted fs-5">You haven't created any shortened URLs yet.</p>
+                    <a href="{% url 'shortener:home' %}" class="btn btn-primary">Create Your First URL</a>
+                </div>
+            {% endif %}
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function copyUrl(url) {
-            navigator.clipboard.writeText(url).then(() => {
-                // Show toast notification
-                const toastElement = document.getElementById('copyToast');
-                const toast = new bootstrap.Toast(toastElement, {
-                    autohide: true,
-                    delay: 5000
-                });
-                toast.show();
+{% block extra_js %}
+<script>
+    function copyUrl(url) {
+        navigator.clipboard.writeText(url).then(() => {
+            // Show toast notification
+            const toastElement = document.getElementById('copyToast');
+            const toast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: 5000
             });
-        }
-    </script>
-</body>
-</html>
+            toast.show();
+        });
+    }
+</script>
+{% endblock %}
